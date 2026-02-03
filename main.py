@@ -1,5 +1,5 @@
 import pandas as pd
-from pre_processing.handle_data import split_data, fill_missing_value
+from pre_processing.handle_data import split_data, fill_missing_value, convert_categorical_to_numerical
 
 # Define global variables
 file_path = 'Data/healthcare-dataset-stroke-data.csv'
@@ -10,8 +10,11 @@ def preprocess_data():
     data = pd.read_csv(file_path)
     
     # Fill missing values
-    data_cleaned = fill_missing_value(data)
-    
+    data_filled = fill_missing_value(data)
+
+    # Convert categorical data to numerical data
+    data_cleaned = convert_categorical_to_numerical(data_filled)
+
     # Split data into train, validation, and test sets
     global train_data, val_data, test_data
     train_data, val_data, test_data = split_data(data_cleaned)
@@ -31,5 +34,5 @@ def export_data():
 if __name__ == "__main__":
     # Run preprocessing
     preprocess_data()
-    export_data()
+    export_data()   
     print("Data preprocessing and export completed.")
