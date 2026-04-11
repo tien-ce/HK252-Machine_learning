@@ -183,7 +183,7 @@ def apply_SMOTE(X,y, random_state):
 
 # Main execution
 if __name__ == "__main__":
-    file_path = 'Data/healthcare-dataset-stroke-data.csv'
+    file_path = 'dataset/healthcare-dataset-stroke-data.csv'
     random_state= 42
     train_data, test_data= preprocess_data(file_path, random_state= random_state)
     train_data, label_train= get_X_and_Y(train_data)

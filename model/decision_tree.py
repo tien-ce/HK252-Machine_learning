@@ -42,7 +42,6 @@ def Decision_Tree_Model(X_train, y_train,
 
                 val_pred = model.predict(X_val)
                 f1 = f1_score(y_val, val_pred, zero_division=0)
-
                 if f1 > best_f1:
                     best_f1 = f1
                     best_model = model
