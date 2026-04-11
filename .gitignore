@@ -12,3 +12,6 @@ ENV/
 # IDE-specific files (VS Code)
 .vscode/
 *.csv
+
+#log
+log/

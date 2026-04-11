@@ -1,62 +1,76 @@
-import csv
+import os
 import json
 import pandas as pd
 from sklearn.model_selection import train_test_split
-def split_data (main_data, train_size = 0.7, validate_size = 0.1,test_size=0.2, random_state=42):
+
+def split_data (main_data, train_size = 0.8, test_size=0.2, random_state=42):
     """
-    Splits the dataset into train, validation, and test sets.
-    Returns: 3 lists (train_list, val_list, test_list)
+    Splits the dataset into train, and test sets.
+    Returns: 2 lists (train_list, test_list)
     """
     # Validate sizes
-    if (train_size + validate_size + test_size) != 1.0:
-        raise ValueError("Train, validation, and test sizes must sum to 1.0")
-    # First split into train and temp (validate + test)
-    temp_size = validate_size + test_size
-    train_data, temp_data = train_test_split(main_data,
+    if (train_size + test_size) != 1.0:
+        raise ValueError("Train, and test sizes must sum to 1.0")
+    train_data, test_data = train_test_split(main_data,
                                             train_size=train_size, 
                                             random_state=random_state)
-    # Then split temp into validate and test
-    validate_ratio = validate_size / temp_size
-    val_data, test_data = train_test_split(temp_data, 
-                                           train_size=validate_ratio, 
-                                           random_state=random_state)
-    return train_data, val_data, test_data
+    return train_data, test_data
 
 
 # Fill missing values
 def _fill_bmi_by_age(df):
-    """Internal helper to fill BMI missing values based on age ranges."""
-    # Define the bins and labels as requested
+    log = {}
+
     bins = [0, 10, 30, 60, 90, 200]
     labels = ['0-10', '10-30', '30-60', '60-90', '90+']
     
-    # Create temporary grouping
     age_groups = pd.cut(df['age'], bins=bins, labels=labels, right=False)
-    print ("Age groups:", age_groups.value_counts())
     
-    # Calculate group medians and fill
-    group = df.groupby(age_groups)
-    print("10-30 group: \n", group.get_group('10-30'))
-    # Mean BMI for each age group
+    # Log distribution
+    log['age_group_distribution'] = age_groups.value_counts().to_dict()
+    
+    group = df.groupby(age_groups, observed= False)
+    
+    # Log sample group
+    if '10-30' in group.groups:
+        log['sample_group_10_30_size'] = len(group.get_group('10-30'))
+    else:
+        log['sample_group_10_30_size'] = 0
+    
     group_medians = group["bmi"].transform('median')
-    print ("Group medians: \n", group_medians)    
+    
+    # Log median (unique values per group)
+    log['bmi_group_medians'] = df.groupby(age_groups, observed= False)['bmi'].median().to_dict()
+    
     df['bmi'] = df['bmi'].fillna(group_medians)
-    return df
+    
+    return df, log
 
 # Fill categorical data by most frequent value
 def _fill_categorical_data(df):
-    # Select categorical columns
+    log = {}
+    
     df_cat = df.select_dtypes(include=['object'])
-    # Get most frequent value for each categorical column
+    
     for column in df_cat.columns:
         most_frequent = df_cat[column].mode()[0]
-        print (f"Most frequent value for {column}: {most_frequent}")
-        # Fill missing values with most frequent
+        
+        log[column] = {
+            "most_frequent": most_frequent,
+            "num_missing_before": int(df[column].isna().sum())
+        }
+        
         df[column] = df[column].fillna(most_frequent)
-    return df
+    
+    return df, log
 
 # Export map (categorical to numerical) to JSON file
 def _export_categorical_map(df_cat, file_path):
+
+    folder = os.path.dirname(file_path)
+    if folder and not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
+
     # Create a dictionary to store the mapping for each categorical column
     cat_map = {}
     for column in df_cat.columns:
@@ -66,24 +80,48 @@ def _export_categorical_map(df_cat, file_path):
     # Write the mapping to a JSON file
     with open(file_path, 'w') as json_file:
         json.dump(cat_map, json_file, indent=4)
+    
+    print(f"categorical_map successfully saved to {file_path}")
 
 # Conver categorical data to numerical data
 def convert_categorical_to_numerical(df):
-    # Convert categorical columns to numerical 
     df_cat = df.select_dtypes(include=['object'])
-    _export_categorical_map(df_cat, 'Data/categorical_map.json')
+    
+    cat_map = {}
+    
     for column in df_cat.columns:
+        unique_labels = df_cat[column].unique()
+        mapping = {label: int(idx) for idx, label in enumerate(unique_labels)}
+        
+        cat_map[column] = mapping
+        
         df[column] = df[column].astype('category').cat.codes
+    
+    _export_categorical_map(df_cat, 'log/categorical_map.json')
+    
     return df
+
+
 def fill_missing_value(main_data):
     """
-    Fills missing values in the dataset.
-    Currently fills missing 'bmi' values based on age groups.
-    Returns: DataFrame with filled missing values
+    Fills missing values + return log
     """
-    # Fill missing BMI values based on age groups
-    main_data = _fill_bmi_by_age(main_data)
-    
-    # Fill missing categorical data
-    main_data = _fill_categorical_data(main_data)
-    return main_data
+    final_log = {}
+
+    main_data, bmi_log = _fill_bmi_by_age(main_data)
+    final_log['bmi_processing'] = bmi_log
+
+    main_data, cat_log = _fill_categorical_data(main_data)
+    final_log['categorical_fill'] = cat_log
+
+    return main_data, final_log
+
+def save_log(log_data, file_path="log/data_processing_log.json"):
+    folder = os.path.dirname(file_path)
+    if folder and not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
+        
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(log_data, f, indent=4)
+
+    print(f"data_processing_log.json successfully saved to {file_path}")
