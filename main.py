@@ -146,26 +146,28 @@ def save_metrics_to_json(metrics_dict, file_path="log/metrics.json"):
 
 def normalize_data(X_train, X_test=None):
     """
-    Normalize dữ liệu về [0, 1]
+    Normalizes data to the range [0, 1] using MinMaxScaler.
     
-    Tham số:
-    - X_train: dữ liệu train
-    - X_test: dữ liệu test (optional)
+    Parameters:
+    - X_train: The training dataset
+    - X_test: The test dataset (optional)
     
-    Trả về:
-    - X_train_scaled
-    - X_test_scaled (nếu có)
-    - scaler (để reuse)
+    Returns:
+    - If X_test is provided: (X_train_scaled, X_test_scaled)
+    - If X_test is None: (X_train_scaled, scaler)
     """
-    print("Normalizing data\n")
+    print("Normalizing data...\n")
     scaler = MinMaxScaler()
     
+    # Fit the scaler on the training data and transform it
     X_train_scaled = scaler.fit_transform(X_train)
     
     if X_test is not None:
+        # Transform the test data using the parameters learned from training data
         X_test_scaled = scaler.transform(X_test)
         return X_train_scaled, X_test_scaled
     
+    # Return the scaled training data and the scaler object for reuse (e.g., for future inference)
     return X_train_scaled, scaler
 
 def get_X_and_Y(dataset):

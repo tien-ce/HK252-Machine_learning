@@ -1,7 +1,11 @@
-## Yêu cầu hệ thống:
+## **STROKE PREDICTION**
+
+This project applies four machine learning models—Decision Tree, Gradient Boosting, Random Forest, and Support Vector Machine (SVM)—to predict the likelihood of stroke based on patient data.
+
+## System Requirement:
 - **Programming Language:** Python 3.10+
 
-## Requirements
+## Installation:
 
 - Create virtual environment
 ```
@@ -26,6 +30,8 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Training
+
 - Training Decision_Tree_Model
 ```
 py main.py Decision_Tree_Model
@@ -44,6 +50,8 @@ py main.py Random_Forest_Library_Model
 - Training Random_Forest_Model
 ```
 py main.py Random_Forest_Model
+Note: 
+It will take quite a long time to train (approximately 20 minutes) since the model uses a basic idea algorithm and does not apply any optimization techniques such as pruning.
 ```
 
 - Training SVM_Model
