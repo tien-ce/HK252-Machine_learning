@@ -57,13 +57,13 @@ class RandomForestClassifier:
             tree.print_tree ()
             print ("\n")
     
-    def fit (self, X, y):
+    def train (self, X, y):
         """
             Function to fit the random forest to the data
                 @X: The feature matrix
                 @y: The target variable
         """
-        dataset = np.concatenate ((X, y.reshape(-1, 1)), axis = 1) # Combine features and target variable into a single dataset
+        dataset = np.hstack((X, y.reshape(-1, 1))) # Combine features and target variable into a single dataset
         self.build_forest (dataset)
 
     def predict (self, X):

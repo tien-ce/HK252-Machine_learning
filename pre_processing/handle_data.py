@@ -2,6 +2,64 @@ import os
 import json
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+
+def preprocess_data(file_path, random_state):
+
+    # Load data
+    data = pd.read_csv(file_path)
+    
+    # Fill missing values
+    data_filled, log = fill_missing_value(data)
+
+    # Convert categorical data to numerical data
+    data_cleaned = convert_categorical_to_numerical(data_filled)
+
+    # Split data into train, and test sets
+    train_data, test_data = split_data(data_cleaned, random_state= random_state)
+    save_log(log)
+    
+    return train_data, test_data
+
+def normalize_data(X_train, X_test=None):
+    """
+    Normalizes data to the range [0, 1] using MinMaxScaler.
+    
+    Parameters:
+    - X_train: The training dataset
+    - X_test: The test dataset (optional)
+    
+    Returns:
+    - If X_test is provided: (X_train_scaled, X_test_scaled)
+    - If X_test is None: (X_train_scaled, scaler)
+    """
+    print("Normalizing data...\n")
+    scaler = MinMaxScaler()
+    
+    # Fit the scaler on the training data and transform it
+    X_train_scaled = scaler.fit_transform(X_train)
+    
+    if X_test is not None:
+        # Transform the test data using the parameters learned from training data
+        X_test_scaled = scaler.transform(X_test)
+        return X_train_scaled, X_test_scaled
+    
+    # Return the scaled training data and the scaler object for reuse (e.g., for future inference)
+    return X_train_scaled, scaler
+
+def get_X_and_Y(dataset):
+    y= dataset['stroke']
+    X= dataset.drop(columns=['stroke'])
+    return np.array(X), np.array(y)
+
+def apply_SMOTE(X,y, random_state):
+    # Apply SMOTE
+    smote = SMOTE(random_state=random_state)
+    X, y = smote.fit_resample(X, y)
+    return X, y
+
 
 def split_data (main_data, train_size = 0.8, test_size=0.2, random_state=42):
     """
@@ -15,7 +73,6 @@ def split_data (main_data, train_size = 0.8, test_size=0.2, random_state=42):
                                             train_size=train_size, 
                                             random_state=random_state)
     return train_data, test_data
-
 
 # Fill missing values
 def _fill_bmi_by_age(df):
